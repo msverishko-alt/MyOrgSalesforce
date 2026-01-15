@@ -1,4 +1,4 @@
-public class AccountHandler {
+public with sharing class AccountHandler{
     public static void insertAccount(Integer count) {
     	
         List <Account> addAccounts = new List <Account> ();
