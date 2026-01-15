@@ -1,0 +1,56 @@
+name: PR Validation
+
+# Срабатывает, когда открываем PR в ветку develop
+on:
+  pull_request:
+    branches: [ develop ]
+
+jobs:
+  validate-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Скачиваем код
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      # 2. Устанавливаем Salesforce CLI
+      - name: Install Salesforce CLI
+        run: npm install @salesforce/cli --global
+
+      # 3. Авторизация в Dev Hub (чтобы создавать Scratch Orgs)
+      - name: Authenticate Dev Hub
+        run: |
+          echo "${{ secrets.SFDX_DEV_HUB_URL }}" > auth_hub.txt
+          sf org login sfdx-url --sfdx-url-file auth_hub.txt --set-default-dev-hub --alias MyDevHub
+          rm auth_hub.txt
+
+      # 4. Установка Java (нужна для сканера PMD)
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '11'
+
+      # 5. Установка и запуск PMD Сканера
+      # Проверяет только папку force-app. Уровень критичности 3 (упадет, если есть грубые ошибки)
+      - name: Run PMD Scanner
+        run: |
+          sf plugins install @salesforce/sfdx-scanner
+          sf scanner run --target "force-app" --format "table" --severity-threshold 3
+
+      # 6. Создание Scratch Org (живет 1 день)
+      - name: Create Scratch Org
+        run: sf org create scratch --target-dev-hub MyDevHub --set-default --definition-file config/project-scratch-def.json --duration-days 1 --alias CI_Scratch --wait 10
+
+      # 7. Заливка кода в Scratch Org
+      - name: Push Source
+        run: sf project deploy start --target-org CI_Scratch
+
+      # 8. Запуск Apex тестов
+      - name: Run Apex Tests
+        run: sf apex run test --target-org CI_Scratch --code-coverage --result-format human --wait 20
+
+      # 9. Удаление Scratch Org (всегда, даже если была ошибка)
+      - name: Delete Scratch Org
+        if: always()
+        run: sf org delete scratch --target-org CI_Scratch --no-prompt
