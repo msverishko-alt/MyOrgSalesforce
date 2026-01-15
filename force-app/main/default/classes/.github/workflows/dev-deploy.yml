@@ -1,0 +1,28 @@
+name: Deploy to Dev Org
+
+# Срабатывает, когда код попадает в develop
+on:
+  push:
+    branches: [ develop ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Install Salesforce CLI
+        run: npm install @salesforce/cli --global
+
+      # Авторизация в целевом орге (используя второй секрет)
+      - name: Authenticate Target Org
+        run: |
+          echo "${{ secrets.SFDX_DEV_ORG_URL }}" > auth_target.txt
+          sf org login sfdx-url --sfdx-url-file auth_target.txt --set-default --alias TargetOrg
+          rm auth_target.txt
+
+      # Деплой и запуск локальных тестов
+      - name: Deploy to Org
+        run: |
+          sf project deploy start --target-org TargetOrg --test-level RunLocalTests --wait 30
