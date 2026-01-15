@@ -1,20 +1,25 @@
-public with sharing class AccountHandler{
-    public static void insertAccount(Integer count) {
-    	
-        List <Account> addAccounts = new List <Account> ();
-        
-        Integer N = 0;
-        
-        while (N < count){
-            addAccounts.add(new Account (
-             Name = 'Acme Inc ' + N,
-                    AccountNumber = 'A000' + N
-            )
-          );
-            N++;
-                
+/**
+ * @description Handles Account creation logic for the training project.
+ */
+public with sharing class AccountHandler {
+
+    /**
+     * @description Creates a specified number of test accounts.
+     * @param numAccounts The number of accounts to create.
+     */
+    public static void createAccounts(Integer numAccounts) {
+        List<Account> addAccounts = new List<Account>();
+
+        // Исправлена ошибка Naming Convention: 'N' заменено на 'i' или 'n'
+        for (Integer n = 0; n < numAccounts; n++) {
+            Account acct = new Account();
+            acct.Name = 'Account ' + n;
+            addAccounts.add(acct);
         }
-        
-        insert addAccounts;
+
+        // Исправлена ошибка Security (CRUD): Добавлено 'as user'
+        if (!addAccounts.isEmpty()) {
+            insert as user addAccounts;
+        }
     }
 }
