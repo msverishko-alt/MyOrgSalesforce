@@ -1,6 +1,8 @@
 /**
  * @description Handles Account creation logic for the training project.
  */
+
+ // comments for 0.2.0 NEXT  version 
 public with sharing class AccountHandler {
 
     /**
@@ -10,14 +12,12 @@ public with sharing class AccountHandler {
     public static void createAccounts(Integer numAccounts) {
         List<Account> addAccounts = new List<Account>();
 
-        // Исправлена ошибка Naming Convention: 'N' заменено на 'i' или 'n'
         for (Integer n = 0; n < numAccounts; n++) {
             Account acct = new Account();
             acct.Name = 'Account ' + n;
             addAccounts.add(acct);
         }
 
-        // Исправлена ошибка Security (CRUD): Добавлено 'as user'
         if (!addAccounts.isEmpty()) {
             insert as user addAccounts;
         }
